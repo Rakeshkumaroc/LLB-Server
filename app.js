@@ -6,6 +6,7 @@ const cors = require("cors");
 const userRoutes = require("./routes/userRoutes");  
 const  mentorRoutes = require("./routes/mentorRoutes"); 
 const  courseRoutes = require("./routes/courseRoutes"); 
+const  batchRoutes = require("./routes/batchRoutes");
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -30,6 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/mentor", mentorRoutes);
 app.use("/api/v1/course", courseRoutes);
+app.use("/api/v1/batch", batchRoutes);
 //  Test Route
 app.get("/api/test", (req, res) => {
   res.status(200).json({ message: "OK" });

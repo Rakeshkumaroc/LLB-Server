@@ -1,21 +1,29 @@
 // ======================== ROUTES/batch.routes.js ========================
 const express = require("express");
 const router = express.Router();
-const batchController = require("../controllers/batch.controller");
-
+const  {
+  createBatch,
+  getAllBatches,
+  getBatchById,
+  updateBatch,
+  deleteBatch,
+getAllBatchesByCourseId
+} = require("../controllers/batchController");
+const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 // CREATE
-router.post("/",createBatch);
+router.post("/create-batch",tokenChecker, allowRoles(["admin"]) ,createBatch);
 
 // GET ALL
-router.get("/", getAllBatches);
+router.get("/get-all-batches", getAllBatches);
 
 // GET SINGLE BY ID
-router.get("/:id", getBatchById);
+router.get("/get-batch-by-id/:id", getBatchById);
+router.get("/get-all-batches-by-courseId/:id",   getAllBatchesByCourseId);
 
 // UPDATE
-router.put("/:id", updateBatch);
+router.put("/update-batch/:id",tokenChecker, allowRoles(["admin"]), updateBatch);
 
 // DELETE (soft)
-router.delete("/:id", deleteBatch);
+router.delete("/delete-batch/:id",tokenChecker, allowRoles(["admin"]), deleteBatch);
 
 module.exports = router;

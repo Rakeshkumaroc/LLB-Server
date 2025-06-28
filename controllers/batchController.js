@@ -1,6 +1,6 @@
 // ======================== CONTROLLERS/batch.controller.js ========================
 const Batch = require("../models/batchModel");
-const Course = require("../models/course.model");
+const Course = require("../models/courseModel");
 const BatchCourseMapping = require("../models/batchCourseMapping");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
@@ -9,6 +9,8 @@ const ApiError = require("../utils/ApiError");
 const createBatch = async (req, res, next) => {
   try {
     const {
+      batchName,
+      batchNo,
       courseId,
       startDate,
       endDate,
@@ -27,7 +29,10 @@ const createBatch = async (req, res, next) => {
       !endTime ||
       !mode ||
       !location ||
-      !capacity
+      !capacity ||
+       !batchName||
+      !batchNo
+
     ) {
       return next(new ApiError("All fields are required", 400));
     }
@@ -50,6 +55,8 @@ const createBatch = async (req, res, next) => {
       mode,
       location,
       capacity,
+       batchName,
+      batchNo,
     });
 
     // Step 2: Insert into mapping table
@@ -149,10 +156,42 @@ const deleteBatch = async (req, res, next) => {
   }
 };
 
+const getAllBatchesByCourseId = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // 🔎 Step 1: Get all mapping entries for courseId
+    const mappings = await BatchCourseMapping.find({
+      courseId:id,
+    });
+
+    if (!mappings.length) {
+      return next(new ApiError("No batches found for this course", 404));
+    }
+
+    // 🎯 Step 2: Extract batchIds
+    const batchIds = mappings.map((m) => m.batchId);
+
+    // 📦 Step 3: Get batch data from batch model
+    const batches = await Batch.find({
+      _id: { $in: batchIds },
+      isDeleted: false,
+      isActive: true,
+    });
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "All batches for course", batches));
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBatch,
   getAllBatches,
   getBatchById,
   updateBatch,
   deleteBatch,
+  getAllBatchesByCourseId
 };
