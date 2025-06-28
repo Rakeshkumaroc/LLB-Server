@@ -79,18 +79,51 @@ const createBatch = async (req, res, next) => {
 // Get all batches with course name
 const getAllBatches = async (req, res, next) => {
   try {
+    // Step 1: Get all active + not deleted batches
     const batches = await Batch.find({ isDeleted: false, isActive: true });
 
     if (!batches || batches.length === 0) {
       return next(new ApiError("No active batches found", 404));
     }
 
-    res.status(200).json(new ApiResponse(200, "Batch list", batches));
+    const batchIds = batches.map((b) => b._id.toString());
+
+    // Step 2: Get mapping for all those batchIds
+    const mappings = await BatchCourseMapping.find({
+      batchId: { $in: batchIds },
+    });
+
+    // Step 3: Get unique courseIds from mappings
+    const courseIdSet = new Set(mappings.map((m) => m.courseId.toString()));
+    const courses = await Course.find({
+      _id: { $in: [...courseIdSet] },
+    });
+
+    const courseMap = {};
+    courses.forEach((c) => {
+      courseMap[c._id.toString()] = c.courseName;
+    });
+
+    // Step 4: Merge courseName into batches
+    const enrichedBatches = batches.map((batch) => {
+      const map = mappings.find(
+        (m) => m.batchId.toString() === batch._id.toString()
+      );
+
+      return {
+        ...batch.toObject(),
+        courseId: map?.courseId || null,
+        courseName: map ? courseMap[map.courseId.toString()] : null,
+      };
+    });
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Batch list with course name", enrichedBatches));
   } catch (error) {
     next(error);
   }
 };
-
 // Get single batch by ID
 const getBatchById = async (req, res, next) => {
   try {
