@@ -1,4 +1,12 @@
-const Course = require("../models/courseModel");
+// ======================== CONTROLLERS/course.controller.js ========================
+
+const Course = require("../models//courseModel");
+const CourseModule = require("../models/courseModule");
+const CourseModuleMapping = require("../models/courseModuleMapping");
+const Price = require("../models/priceModel");
+const CoursePriceMapping = require("../models/coursePriceMapping");
+const SpecialPrice = require("../models/specialPrice");
+const SpecialPriceMapping = require("../models/specialPriceMapping");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 
@@ -16,23 +24,24 @@ const createCourse = async (req, res, next) => {
       pdfUrl,
       isFree,
       category,
+      price,
+      specialPrice,
+      modules,
     } = req.body;
 
-    //  Validation
-    if (!courseName || !videoUrl || !duration || !language || !description) {
-      return next(
-        new ApiError(
-          "courseName, videoUrl, duration, language, and description are required",
-          400
-        )
-      );
+    if (
+      !courseName ||
+      !videoUrl ||
+      !duration ||
+      !language ||
+      !description ||
+      !price
+    ) {
+      return next(new ApiError("Required fields are missing", 400));
     }
 
-    // Check for duplicates
     const existing = await Course.findOne({ courseName, isDeleted: false });
-    if (existing) {
-      return next(new ApiError("Course already exists", 400));
-    }
+    if (existing) return next(new ApiError("Course already exists", 400));
 
     const course = await Course.create({
       courseName,
@@ -47,10 +56,36 @@ const createCourse = async (req, res, next) => {
       category,
     });
 
+    if (Array.isArray(modules) && modules.length) {
+      for (const m of modules) {
+        const module = await CourseModule.create(m);
+        await CourseModuleMapping.create({
+          courseId: course._id,
+          moduleId: module._id,
+        });
+      }
+    }
+
+    const newPrice = await Price.create({ price });
+    await CoursePriceMapping.create({
+      courseId: course._id,
+      priceId: newPrice._id,
+    });
+
+    if (specialPrice) {
+      const sp = await SpecialPrice.create({ specialPrice });
+      await SpecialPriceMapping.create({
+        courseId: course._id,
+        specialPriceId: sp._id,
+      });
+    }
+
     res
       .status(201)
       .json(new ApiResponse(201, "Course created successfully", course));
   } catch (error) {
+    console.log(error)
+    console.log(error.message)
     next(error);
   }
 };
@@ -70,11 +105,40 @@ const getSingleCourseById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const course = await Course.findOne({ _id: id, isDeleted: false });
-    if (!course) {
-      return next(new ApiError("Course not found", 404));
+    if (!course) return next(new ApiError("Course not found", 404));
+
+    const moduleMappings = await CourseModuleMapping.find({
+      courseId: id,
+      isDeleted: false,
+    });
+    const modules = [];
+    for (const map of moduleMappings) {
+      const mod = await CourseModule.findById(map.moduleId);
+      if (mod) modules.push(mod);
     }
 
-    res.status(200).json(new ApiResponse(200, "Course details", course));
+    const priceMap = await CoursePriceMapping.findOne({
+      courseId: id,
+      isDeleted: false,
+    });
+    const price = priceMap ? await Price.findById(priceMap.priceId) : null;
+
+    const specialMap = await SpecialPriceMapping.findOne({
+      courseId: id,
+      isDeleted: false,
+    });
+    const specialPrice = specialMap
+      ? await SpecialPrice.findById(specialMap.specialPriceId)
+      : null;
+
+    res.status(200).json(
+      new ApiResponse(200, "Course details", {
+        ...course.toObject(),
+        modules,
+        price,
+        specialPrice,
+      })
+    );
   } catch (error) {
     next(error);
   }
@@ -84,16 +148,51 @@ const getSingleCourseById = async (req, res, next) => {
 const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const {
+      courseName,
+      description,
+      videoUrl,
+      duration,
+      language,
+      pdfUrl,
+      isFree,
+      category,
+      price,
+      specialPrice,
+    } = req.body;
 
     const course = await Course.findOneAndUpdate(
       { _id: id, isDeleted: false },
-      updates,
+      {
+        courseName,
+        description,
+        videoUrl,
+        duration,
+        language,
+        pdfUrl,
+        isFree,
+        category,
+      },
       { new: true }
     );
+    if (!course) return next(new ApiError("Course not found", 404));
 
-    if (!course) {
-      return next(new ApiError("Course not found", 404));
+    const priceMap = await CoursePriceMapping.findOne({
+      courseId: id,
+      isDeleted: false,
+    });
+    if (priceMap && price) {
+      await Price.findByIdAndUpdate(priceMap.priceId, { price });
+    }
+
+    const specialMap = await SpecialPriceMapping.findOne({
+      courseId: id,
+      isDeleted: false,
+    });
+    if (specialMap && specialPrice) {
+      await SpecialPrice.findByIdAndUpdate(specialMap.specialPriceId, {
+        specialPrice,
+      });
     }
 
     res.status(200).json(new ApiResponse(200, "Course updated", course));
@@ -106,16 +205,25 @@ const updateCourse = async (req, res, next) => {
 const deleteCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const course = await Course.findByIdAndUpdate(
       id,
       { isDeleted: true, isActive: false },
       { new: true }
     );
+    if (!course) return next(new ApiError("Course not found", 404));
 
-    if (!course) {
-      return next(new ApiError("Course not found", 404));
-    }
+    await CourseModuleMapping.updateMany(
+      { courseId: id },
+      { isDeleted: true, isActive: false }
+    );
+    await CoursePriceMapping.updateMany(
+      { courseId: id },
+      { isDeleted: true, isActive: false }
+    );
+    await SpecialPriceMapping.updateMany(
+      { courseId: id },
+      { isDeleted: true, isActive: false }
+    );
 
     res.status(200).json(new ApiResponse(200, "Course deleted", course));
   } catch (error) {

@@ -35,7 +35,6 @@ const courseSchema = new mongoose.Schema(
     },
       category: {
       type: String,
-      default: "free courses", 
     },
     pdfUrl: {
       type: String,
