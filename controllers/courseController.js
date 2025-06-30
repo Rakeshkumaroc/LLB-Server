@@ -1,25 +1,52 @@
-// ======================== CONTROLLERS/course.controller.js ========================
 const Course = require("../models/courseModel");
 const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 
-// Create course
+// ======================= CREATE COURSE =========================
 const createCourse = async (req, res, next) => {
   try {
-    const { courseName, description, courseThumbnail } = req.body;
-    if (!courseName || !description || !courseThumbnail)
-      return next(
-        new ApiError("Course name thumbnail description is required", 400)
-      );
+    const {
+      courseName,
+      description,
+      courseThumbnail,
+      videoUrl,
+      duration,
+      language,
+      createdBy,
+      pdfUrl,
+      isFree,
+      category,
+    } = req.body;
 
-    const existing = await Course.findOne({ courseName });
-    if (existing) return next(new ApiError("Course already exists", 400));
+    //  Validation
+    if (!courseName || !videoUrl || !duration || !language || !description) {
+      return next(
+        new ApiError(
+          "courseName, videoUrl, duration, language, and description are required",
+          400
+        )
+      );
+    }
+
+    // Check for duplicates
+    const existing = await Course.findOne({ courseName, isDeleted: false });
+    if (existing) {
+      return next(new ApiError("Course already exists", 400));
+    }
 
     const course = await Course.create({
       courseName,
       description,
       courseThumbnail,
+      videoUrl,
+      duration,
+      language,
+      createdBy: createdBy || "LLB",
+      pdfUrl,
+      isFree: isFree ?? false,
+      category,
     });
+
     res
       .status(201)
       .json(new ApiResponse(201, "Course created successfully", course));
@@ -28,22 +55,24 @@ const createCourse = async (req, res, next) => {
   }
 };
 
-// Get all active courses
+// ======================= GET ALL COURSES =========================
 const getAllCourses = async (req, res, next) => {
   try {
-    const courses = await Course.find({ isDeleted: false });
+    const courses = await Course.find({ isDeleted: false, isActive: true });
     res.status(200).json(new ApiResponse(200, "Course list", courses));
   } catch (error) {
     next(error);
   }
 };
 
-// Get single course by ID
+// ======================= GET SINGLE COURSE =========================
 const getSingleCourseById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const course = await Course.findOne({ _id: id, isDeleted: false });
-    if (!course) return next(new ApiError("Course not found", 404));
+    if (!course) {
+      return next(new ApiError("Course not found", 404));
+    }
 
     res.status(200).json(new ApiResponse(200, "Course details", course));
   } catch (error) {
@@ -51,19 +80,21 @@ const getSingleCourseById = async (req, res, next) => {
   }
 };
 
-// Update course
+// ======================= UPDATE COURSE =========================
 const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { courseName, description, isActive } = req.body;
+    const updates = req.body;
 
     const course = await Course.findOneAndUpdate(
       { _id: id, isDeleted: false },
-      { courseName, description, isActive },
+      updates,
       { new: true }
     );
 
-    if (!course) return next(new ApiError("Course not found", 404));
+    if (!course) {
+      return next(new ApiError("Course not found", 404));
+    }
 
     res.status(200).json(new ApiResponse(200, "Course updated", course));
   } catch (error) {
@@ -71,16 +102,20 @@ const updateCourse = async (req, res, next) => {
   }
 };
 
-// Soft delete course
+// ======================= DELETE COURSE (SOFT DELETE) =========================
 const deleteCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
+
     const course = await Course.findByIdAndUpdate(
       id,
       { isDeleted: true, isActive: false },
       { new: true }
     );
-    if (!course) return next(new ApiError("Course not found", 404));
+
+    if (!course) {
+      return next(new ApiError("Course not found", 404));
+    }
 
     res.status(200).json(new ApiResponse(200, "Course deleted", course));
   } catch (error) {

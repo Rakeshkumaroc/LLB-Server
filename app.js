@@ -7,6 +7,8 @@ const userRoutes = require("./routes/userRoutes");
 const  mentorRoutes = require("./routes/mentorRoutes"); 
 const  courseRoutes = require("./routes/courseRoutes"); 
 const  batchRoutes = require("./routes/batchRoutes");
+const  ratingRoutes = require("./routes/ratingRoutes");
+const  moduleRoutes = require("./routes/moduleRoutes");
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -32,6 +34,8 @@ app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/mentor", mentorRoutes);
 app.use("/api/v1/course", courseRoutes);
 app.use("/api/v1/batch", batchRoutes);
+app.use("/api/v1/rating", ratingRoutes);
+app.use("/api/v1/module", moduleRoutes);
 //  Test Route
 app.get("/api/test", (req, res) => {
   res.status(200).json({ message: "OK" });

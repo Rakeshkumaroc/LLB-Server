@@ -1,0 +1,5 @@
+// price,
+// validFrom,
+// validito,
+// isactive ,
+// isdelete,

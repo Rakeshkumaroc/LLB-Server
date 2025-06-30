@@ -1,19 +1,19 @@
 // ======================== ROUTES/rating.routes.js ========================
 const express = require("express");
 const router = express.Router();
-const ratingController = require("../controllers/rating.controller");
-const { verifyToken } = require("../middlewares/auth.middleware");
+const { createRating, getRatingsByCourse, updateRating, deleteRating } = require("../controllers/ratingController");
+const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 
 // Create a new rating
-router.post("/", verifyToken, ratingController.createRating);
+router.post("/create-rating",tokenChecker, createRating);
 
 // Get all ratings for a specific course
-router.get("/course/:courseId", ratingController.getRatingsByCourse);
+router.get("/get-ratings-by-course-id/:courseId", getRatingsByCourse);
 
 // Update a rating by rating ID
-router.put("/:id", verifyToken, ratingController.updateRating);
+router.put("/update-rating/:id", updateRating);
 
 // Soft delete a rating by rating ID
-router.delete("/:id", verifyToken, ratingController.deleteRating);
+router.delete("/delete-rating/:id", deleteRating);
 
 module.exports = router

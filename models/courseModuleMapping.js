@@ -1,18 +1,16 @@
 const mongoose = require("mongoose");
 
-const ratingMappingSchema = new mongoose.Schema(
+const courseModuleMappingSchema = new mongoose.Schema(
   {
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
+  
     },
-    userId: {
+    moduleId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-    },
-    ratingId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
+   
     },
     validFrom: {
       type: Date,
@@ -34,4 +32,4 @@ const ratingMappingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("ratingMapping", ratingMappingSchema);
+module.exports = mongoose.model("courseModuleMapping", courseModuleMappingSchema);
