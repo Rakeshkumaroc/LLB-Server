@@ -59,8 +59,6 @@ router.put(
 // Admin soft-deletes a rating
 router.delete(
   "/delete-rating/:id",
-  tokenChecker,
-  allowRoles(adminRoles),
   deleteRating
 );
 
