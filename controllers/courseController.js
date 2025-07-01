@@ -29,14 +29,7 @@ const createCourse = async (req, res, next) => {
       modules,
     } = req.body;
 
-    if (
-      !courseName ||
-      !videoUrl ||
-      !duration ||
-      !language ||
-      !description ||
-      !isFree
-    ) {
+    if (!courseName || !videoUrl || !duration || !language || !description) {
       return next(new ApiError("Required fields are missing", 400));
     }
 
@@ -56,6 +49,7 @@ const createCourse = async (req, res, next) => {
       category,
     });
 
+    // Create and map modules if present
     if (Array.isArray(modules) && modules.length) {
       for (const m of modules) {
         const module = await CourseModule.create(m);
@@ -66,29 +60,29 @@ const createCourse = async (req, res, next) => {
       }
     }
 
-    const newPrice = await Price.create({ price });
+    // Always create price and mapping (default 0)
+    const newPrice = await Price.create({ price: price ?? 0 });
     await CoursePriceMapping.create({
       courseId: course._id,
       priceId: newPrice._id,
     });
 
-    if (specialPrice) {
-      const sp = await SpecialPrice.create({ specialPrice });
-      await SpecialPriceMapping.create({
-        courseId: course._id,
-        specialPriceId: sp._id,
-      });
-    }
+    // Always create special price and mapping (default 0)
+    const sp = await SpecialPrice.create({ specialPrice: specialPrice ?? 0 });
+    await SpecialPriceMapping.create({
+      courseId: course._id,
+      specialPriceId: sp._id,
+    });
 
     res
       .status(201)
       .json(new ApiResponse(201, "Course created successfully", course));
   } catch (error) {
-    console.log(error)
-    console.log(error.message)
+    console.log(error);
     next(error);
   }
 };
+
 
 // ======================= GET ALL COURSES =========================
 const getAllCourses = async (req, res, next) => {
