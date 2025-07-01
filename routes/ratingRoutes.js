@@ -1,21 +1,99 @@
-// ======================== ROUTES/rating.routes.js ========================
 const express = require("express");
 const router = express.Router();
-const { createRating, getRatingsByCourse, updateRating, deleteRating,getAllRatings } = require("../controllers/ratingController");
+
+const {
+  createRating,
+  getRatingsByCourse,
+  getRatingsByCourseForAdmin,
+  getAllRatings,
+  getTestimonialRatings,
+  updateRating,
+  deleteRating,
+  bulkEnableShowInUi,
+  bulkDisableShowInUi,
+  bulkEnableShowInTestimonial,
+  bulkDisableShowInTestimonial,
+} = require("../controllers/ratingController");
+
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 
-// Create a new rating
-router.post("/create-rating",tokenChecker, createRating);
+// ====================== USER ROUTES ======================
 
-// Get all ratings for a specific course
+// User creates a rating
+router.post("/create-rating", tokenChecker, createRating);
+
+// Get ratings visible on course UI
 router.get("/get-ratings-by-course-id/:courseId", getRatingsByCourse);
 
-// Update a rating by rating ID
-router.put("/update-rating/:id", updateRating);
+// Get testimonial ratings to show on testimonial section
+router.get("/get-testimonial-ratings", getTestimonialRatings);
 
-// Soft delete a rating by rating ID
-router.delete("/delete-rating/:id", deleteRating);
+// ====================== ADMIN ROUTES ======================
 
-router.get("/all-ratings", getAllRatings);
+const adminRoles = ["admin"];
 
-module.exports = router
+// Admin gets all ratings (with user & course join)
+router.get(
+  "/all-ratings",
+  tokenChecker,
+  allowRoles(adminRoles),
+  getAllRatings
+);
+
+// Admin gets all ratings for a course (even hidden ones)
+router.get(
+  "/get-ratings-by-course-id-admin/:courseId",
+  tokenChecker,
+  allowRoles(adminRoles),
+  getRatingsByCourseForAdmin
+);
+
+// Admin updates a rating
+router.put(
+  "/update-rating/:id",
+  tokenChecker,
+  allowRoles(adminRoles),
+  updateRating
+);
+
+// Admin soft-deletes a rating
+router.delete(
+  "/delete-rating/:id",
+  tokenChecker,
+  allowRoles(adminRoles),
+  deleteRating
+);
+
+// Admin enables 'showInUI' for multiple ratings
+router.put(
+  "/enable-show-in-ui",
+  tokenChecker,
+  allowRoles(adminRoles),
+  bulkEnableShowInUi
+);
+
+// Admin disables 'showInUI' for multiple ratings
+router.put(
+  "/disable-show-in-ui",
+  tokenChecker,
+  allowRoles(adminRoles),
+  bulkDisableShowInUi
+);
+
+// Admin enables 'showInTestimonial' for multiple ratings
+router.put(
+  "/enable-show-in-testimonial",
+  tokenChecker,
+  allowRoles(adminRoles),
+  bulkEnableShowInTestimonial
+);
+
+// Admin disables 'showInTestimonial' for multiple ratings
+router.put(
+  "/disable-show-in-testimonial",
+  tokenChecker,
+  allowRoles(adminRoles),
+  bulkDisableShowInTestimonial
+);
+
+module.exports = router;

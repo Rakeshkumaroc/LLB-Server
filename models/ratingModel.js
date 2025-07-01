@@ -13,7 +13,7 @@ const ratingSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    showInCourse: { type: Boolean, default: false },
+    showInUI: { type: Boolean, default: false },
     showInTestimonial: { type: Boolean, default: false },
 
 
