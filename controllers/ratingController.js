@@ -11,9 +11,11 @@ const createRating = async (req, res, next) => {
   try {
     const { courseId, rating, review } = req.body;
     const userId = req.user?.userId;
-console.log(courseId, rating, review ,userId)
+    console.log(courseId, rating, review, userId);
     if (!courseId || !rating || !userId) {
-      return next(new ApiError("courseId, rating, and userId are required", 400));
+      return next(
+        new ApiError("courseId, rating, and userId are required", 400)
+      );
     }
 
     const newRating = await Rating.create({ rating, review });
@@ -25,15 +27,15 @@ console.log(courseId, rating, review ,userId)
     });
 
     res.status(201).json(
-      new ApiResponse(201, "Rating submitted successfully", { newRating, mapping })
+      new ApiResponse(201, "Rating submitted successfully", {
+        newRating,
+        mapping,
+      })
     );
   } catch (error) {
     next(error);
   }
 };
-
-
-
 
 const getAllRatings = async (req, res, next) => {
   try {
@@ -95,8 +97,6 @@ const getAllRatings = async (req, res, next) => {
   }
 };
 
-
-
 // Get all ratings for a course this is for ui
 const getRatingsByCourse = async (req, res, next) => {
   try {
@@ -156,8 +156,6 @@ const getRatingsByCourse = async (req, res, next) => {
   }
 };
 
-
-
 const getRatingsByCourseForAdmin = async (req, res, next) => {
   try {
     const { courseId } = req.params;
@@ -215,10 +213,6 @@ const getRatingsByCourseForAdmin = async (req, res, next) => {
   }
 };
 
-
-
-
-
 const getTestimonialRatings = async (req, res, next) => {
   try {
     const mappings = await RatingMapping.find({ isDeleted: false });
@@ -260,7 +254,9 @@ const getTestimonialRatings = async (req, res, next) => {
         };
       });
 
-    res.status(200).json(new ApiResponse(200, "Testimonial ratings fetched", enriched));
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Testimonial ratings fetched", enriched));
   } catch (error) {
     next(error);
   }
@@ -286,7 +282,6 @@ const updateRating = async (req, res, next) => {
   }
 };
 
-
 const bulkEnableShowInUi = async (req, res, next) => {
   try {
     const { ratingIds } = req.body;
@@ -300,14 +295,13 @@ const bulkEnableShowInUi = async (req, res, next) => {
       { $set: { showInUI: true, isActive: true } }
     );
 
-    res.status(200).json(
-      new ApiResponse(200, "Ratings marked as showInUI", result)
-    );
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Ratings marked as showInUI", result));
   } catch (error) {
     next(error);
   }
 };
-
 
 const bulkEnableShowInTestimonial = async (req, res, next) => {
   try {
@@ -322,16 +316,15 @@ const bulkEnableShowInTestimonial = async (req, res, next) => {
       { $set: { showInTestimonial: true, isActive: true } }
     );
 
-    res.status(200).json(
-      new ApiResponse(200, "Ratings marked as showInTestimonial", result)
-    );
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, "Ratings marked as showInTestimonial", result)
+      );
   } catch (error) {
     next(error);
   }
 };
-
-
-
 
 const bulkDisableShowInUi = async (req, res, next) => {
   try {
@@ -346,14 +339,13 @@ const bulkDisableShowInUi = async (req, res, next) => {
       { $set: { showInUI: false } }
     );
 
-    res.status(200).json(
-      new ApiResponse(200, "Ratings marked as showInUI", result)
-    );
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Ratings marked as showInUI", result));
   } catch (error) {
     next(error);
   }
 };
-
 
 const bulkDisableShowInTestimonial = async (req, res, next) => {
   try {
@@ -365,19 +357,18 @@ const bulkDisableShowInTestimonial = async (req, res, next) => {
 
     const result = await Rating.updateMany(
       { _id: { $in: ratingIds }, isDeleted: false },
-      { $set: { showInTestimonial: false} }
+      { $set: { showInTestimonial: false } }
     );
 
-    res.status(200).json(
-      new ApiResponse(200, "Ratings marked as showInTestimonial", result)
-    );
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, "Ratings marked as showInTestimonial", result)
+      );
   } catch (error) {
     next(error);
   }
 };
-
-
-
 
 // Delete Rating + Mapping (soft delete)
 const deleteRating = async (req, res, next) => {
@@ -387,7 +378,12 @@ const deleteRating = async (req, res, next) => {
     // Step 1: Soft delete the rating
     const rating = await Rating.findByIdAndUpdate(
       id,
-      { isDeleted: true },
+      {
+        isDeleted: true,
+        isActive: false,
+        showInUI: false,
+        showInTestimonial: false,
+      },
       { new: true }
     );
 
@@ -403,12 +399,24 @@ const deleteRating = async (req, res, next) => {
       }
     );
 
-    res.status(200).json(
-      new ApiResponse(200, "Rating and mapping soft-deleted", rating)
-    );
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Rating and mapping soft-deleted", rating));
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { createRating, getRatingsByCourse, updateRating, deleteRating ,getAllRatings,getRatingsByCourseForAdmin ,bulkEnableShowInTestimonial ,bulkEnableShowInUi ,bulkDisableShowInTestimonial,bulkDisableShowInUi, getTestimonialRatings};
+module.exports = {
+  createRating,
+  getRatingsByCourse,
+  updateRating,
+  deleteRating,
+  getAllRatings,
+  getRatingsByCourseForAdmin,
+  bulkEnableShowInTestimonial,
+  bulkEnableShowInUi,
+  bulkDisableShowInTestimonial,
+  bulkDisableShowInUi,
+  getTestimonialRatings,
+};
