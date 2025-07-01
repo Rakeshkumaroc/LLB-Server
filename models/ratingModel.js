@@ -13,6 +13,10 @@ const ratingSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    showInCourse: { type: Boolean, default: false },
+    showInTestimonial: { type: Boolean, default: false },
+
+
      isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
   },
