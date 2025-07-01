@@ -87,7 +87,7 @@ const getAllRatings = async (req, res, next) => {
           showInUI: rating.showInUI,
           showInTestimonial: rating.showInTestimonial,
           createdAt: rating.createdAt,
-          ratingId:rating._id
+         _id:rating._id
         };
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
