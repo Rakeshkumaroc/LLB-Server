@@ -35,7 +35,7 @@ const createCourse = async (req, res, next) => {
       !duration ||
       !language ||
       !description ||
-      !price
+      !isFree
     ) {
       return next(new ApiError("Required fields are missing", 400));
     }
@@ -159,8 +159,10 @@ const updateCourse = async (req, res, next) => {
       category,
       price,
       specialPrice,
+      modules // array of module objects
     } = req.body;
 
+    // 1. Update course
     const course = await Course.findOneAndUpdate(
       { _id: id, isDeleted: false },
       {
@@ -177,6 +179,7 @@ const updateCourse = async (req, res, next) => {
     );
     if (!course) return next(new ApiError("Course not found", 404));
 
+    // 2. Update price
     const priceMap = await CoursePriceMapping.findOne({
       courseId: id,
       isDeleted: false,
@@ -185,6 +188,7 @@ const updateCourse = async (req, res, next) => {
       await Price.findByIdAndUpdate(priceMap.priceId, { price });
     }
 
+    // 3. Update special price
     const specialMap = await SpecialPriceMapping.findOne({
       courseId: id,
       isDeleted: false,
@@ -195,16 +199,50 @@ const updateCourse = async (req, res, next) => {
       });
     }
 
+    // 4. Update modules
+    if (Array.isArray(modules)) {
+      for (const mod of modules) {
+        const { _id, title, subtitle, content, order } = mod;
+
+        if (_id) {
+          // Existing module - update
+          await CourseModule.findByIdAndUpdate(_id, {
+            title,
+            subtitle,
+            content,
+            order,
+          });
+        } else {
+          // New module - create and map
+          const newModule = await CourseModule.create({
+            title,
+            subtitle,
+            content,
+            order,
+          });
+
+          await CourseModuleMapping.create({
+            courseId: id,
+            moduleId: newModule._id,
+          });
+        }
+      }
+    }
+
     res.status(200).json(new ApiResponse(200, "Course updated", course));
   } catch (error) {
     next(error);
   }
-};
+}; 
+
+
 
 // ======================= DELETE COURSE (SOFT DELETE) =========================
 const deleteCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // 1. Soft delete course
     const course = await Course.findByIdAndUpdate(
       id,
       { isDeleted: true, isActive: false },
@@ -212,24 +250,55 @@ const deleteCourse = async (req, res, next) => {
     );
     if (!course) return next(new ApiError("Course not found", 404));
 
+    const currentDate = new Date();
+
+    // 2. Soft delete CourseModuleMapping & actual CourseModules
+    const moduleMappings = await CourseModuleMapping.find({ courseId: id, isDeleted: false });
+
     await CourseModuleMapping.updateMany(
       { courseId: id },
-      { isDeleted: true, isActive: false }
+      { isDeleted: true, isActive: false, validTo: currentDate }
     );
-    await CoursePriceMapping.updateMany(
-      { courseId: id },
-      { isDeleted: true, isActive: false }
-    );
-    await SpecialPriceMapping.updateMany(
-      { courseId: id },
+
+    const moduleIds = moduleMappings.map((m) => m.moduleId);
+    await CourseModule.updateMany(
+      { _id: { $in: moduleIds } },
       { isDeleted: true, isActive: false }
     );
 
-    res.status(200).json(new ApiResponse(200, "Course deleted", course));
+    // 3. Soft delete CoursePriceMapping & actual Price
+    const priceMappings = await CoursePriceMapping.find({ courseId: id, isDeleted: false });
+    await CoursePriceMapping.updateMany(
+      { courseId: id },
+      { isDeleted: true, isActive: false, validTo: currentDate }
+    );
+
+    const priceIds = priceMappings.map((m) => m.priceId);
+    await Price.updateMany(
+      { _id: { $in: priceIds } },
+      { isDeleted: true, isActive: false }
+    );
+
+    // 4. Soft delete SpecialPriceMapping & actual SpecialPrice
+    const specialMappings = await SpecialPriceMapping.find({ courseId: id, isDeleted: false });
+    await SpecialPriceMapping.updateMany(
+      { courseId: id },
+      { isDeleted: true, isActive: false, validTo: currentDate }
+    );
+
+    const specialPriceIds = specialMappings.map((m) => m.specialPriceId);
+    await SpecialPrice.updateMany(
+      { _id: { $in: specialPriceIds } },
+      { isDeleted: true, isActive: false }
+    );
+
+    //  Response
+    res.status(200).json(new ApiResponse(200, "Course and related data soft-deleted", course));
   } catch (error) {
     next(error);
   }
 };
+
 
 module.exports = {
   createCourse,
