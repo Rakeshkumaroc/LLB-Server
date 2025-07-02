@@ -13,6 +13,7 @@ const {
   bulkDisableShowInUi,
   bulkEnableShowInTestimonial,
   bulkDisableShowInTestimonial,
+  getRatingById
 } = require("../controllers/ratingController");
 
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
@@ -92,6 +93,14 @@ router.put(
   tokenChecker,
   allowRoles(adminRoles),
   bulkDisableShowInTestimonial
+);
+
+
+router.get(
+  "/get-rating-by-id/:id",
+  tokenChecker,
+  allowRoles(adminRoles),
+  getRatingById
 );
 
 module.exports = router;

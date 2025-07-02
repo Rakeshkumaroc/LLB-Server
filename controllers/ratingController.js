@@ -411,6 +411,49 @@ const deleteRating = async (req, res, next) => {
   }
 };
 
+const getRatingById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const mapping = await RatingMapping.findOne({
+      ratingId: id,
+      isDeleted: false,
+    });
+
+    if (!mapping) {
+      return next(new ApiError("Rating mapping not found", 404));
+    }
+
+    const [rating, user, course] = await Promise.all([
+      Rating.findOne({ _id: id, isDeleted: false }),
+      userModel.findById(mapping.userId),
+      courseModel.findById(mapping.courseId),
+    ]);
+
+    if (!rating) {
+      return next(new ApiError("Rating not found", 404));
+    }
+
+    const enriched = {
+      userName: user?.userName || "Unknown",
+      userProfile: user?.profile || null,
+      courseId: mapping.courseId,
+      courseName: course?.courseName || "Unknown",
+      rating: rating.rating,
+      review: rating.review,
+      showInUI: rating.showInUI,
+      showInTestimonial: rating.showInTestimonial,
+      createdAt: rating.createdAt,
+      _id: rating._id,
+    };
+
+    res.status(200).json(new ApiResponse(200, "Single rating fetched", enriched));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
   createRating,
   getRatingsByCourse,
@@ -423,4 +466,5 @@ module.exports = {
   bulkDisableShowInTestimonial,
   bulkDisableShowInUi,
   getTestimonialRatings,
+  getRatingById
 };
