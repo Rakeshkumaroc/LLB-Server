@@ -342,4 +342,25 @@ const deleteUser = async (req, res, next) => {
 };
 
 
-module.exports = { signUp, login, addChildAdmin ,getAllInstitutes ,getAllStudent ,updateUser ,deleteUser};
+// GET SINGLE USER BY ID
+const getSingleUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await userModel
+      .findOne({ _id: id, isDeleted: false })
+     
+
+    if (!user) {
+      return next(new ApiError("User not found", 404));
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "User fetched successfully", user));
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { signUp, login, addChildAdmin ,getAllInstitutes ,getAllStudent ,updateUser ,deleteUser,getSingleUserById};

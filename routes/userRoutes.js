@@ -7,6 +7,7 @@ const {
   getAllStudent,
   updateUser,
   deleteUser,
+  getSingleUserById
 } = require("../controllers/userController");
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 const router = express.Router();
@@ -36,6 +37,7 @@ router.get(
 
 router.put("/update-user/:id", tokenChecker, updateUser);
 
-router.delete("/delete-user/:id", tokenChecker, getAllStudent);
+router.delete("/delete-user/:id", tokenChecker, deleteUser);
+router.get("/get-single-user-by-id/:id", tokenChecker, getSingleUserById);
 
 module.exports = router;
