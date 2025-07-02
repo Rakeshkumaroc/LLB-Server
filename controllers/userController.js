@@ -252,4 +252,94 @@ const getAllInstitutes = async (req, res, next) => {
   }
 };
 
-module.exports = { signUp, login, addChildAdmin ,getAllInstitutes };
+
+// GET ALL INSTITUTES
+const getAllStudent = async (req, res, next) => {
+  try {
+    const students = await userModel.find({
+      role: "student",
+      isDeleted: false,
+    })
+
+    res.status(200).json(new ApiResponse(200, "All student fetched successfully", students));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { userName, email, phone, userProfilePic, password } = req.body;
+
+    // === VALIDATIONS ===
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (email && !emailRegex.test(email)) {
+      return next(new ApiError("Invalid email format", 400));
+    }
+
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (phone && !phoneRegex.test(phone)) {
+      return next(new ApiError("Invalid phone number", 400));
+    }
+
+    if (password && password.length < 6) {
+      return next(new ApiError("Password must be at least 6 characters", 400));
+    }
+
+    // === PREPARE UPDATE DATA ===
+    const updateData = { userName, email, phone, userProfilePic };
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(
+        password,
+        Number(process.env.SALT_ROUNDS || 10)
+      );
+      updateData.password = hashedPassword;
+    }
+
+    // === UPDATE OPERATION ===
+    const updatedUser = await userModel.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      updateData,
+      { new: true }
+    )
+
+    if (!updatedUser) {
+      return next(new ApiError("User not found or already deleted", 404));
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "User updated successfully", updatedUser));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// DELETE USER (Soft Delete)
+const deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const deletedUser = await userModel.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { isDeleted: true, isActive:false },
+      { new: true }
+    );
+
+    if (!deletedUser) {
+      return next(new ApiError("User not found or already deleted", 404));
+    }
+
+    res.status(200).json(new ApiResponse(200, "User deleted successfully", deletedUser));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+module.exports = { signUp, login, addChildAdmin ,getAllInstitutes ,getAllStudent ,updateUser ,deleteUser};

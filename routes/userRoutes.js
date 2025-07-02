@@ -3,7 +3,10 @@ const {
   signUp,
   login,
   addChildAdmin,
-  getAllInstitutes
+  getAllInstitutes,
+  getAllStudent,
+  updateUser,
+  deleteUser,
 } = require("../controllers/userController");
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 const router = express.Router();
@@ -24,5 +27,15 @@ router.get(
   allowRoles(["admin"]),
   getAllInstitutes
 );
+router.get(
+  "/get-all-student",
+  tokenChecker,
+  allowRoles(["admin"]),
+  getAllStudent
+);
+
+router.put("/update-user", tokenChecker, updateUser);
+
+router.delete("/delete-user", tokenChecker, getAllStudent);
 
 module.exports = router;
