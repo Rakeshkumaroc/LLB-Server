@@ -11,7 +11,6 @@ const createRating = async (req, res, next) => {
   try {
     const { courseId, rating, review } = req.body;
     const userId = req.user?.userId;
-    console.log(courseId, rating, review, userId);
     if (!courseId || !rating || !userId) {
       return next(
         new ApiError("courseId, rating, and userId are required", 400)
@@ -148,6 +147,7 @@ const getRatingsByCourse = async (req, res, next) => {
           rating: rating?.rating || null,
           review: rating?.review || "",
           createdAt: rating?.createdAt || null,
+          _id:rating._id
         };
       });
 
@@ -205,6 +205,7 @@ const getRatingsByCourseForAdmin = async (req, res, next) => {
           rating: rating?.rating || null,
           review: rating?.review || "",
           createdAt: rating?.createdAt || null,
+          _id:rating._id
         };
       });
 
@@ -252,6 +253,7 @@ const getTestimonialRatings = async (req, res, next) => {
           rating: rating?.rating || null,
           review: rating?.review || "",
           createdAt: rating?.createdAt || null,
+          _id:rating._id
         };
       });
 
@@ -404,6 +406,7 @@ const deleteRating = async (req, res, next) => {
       .status(200)
       .json(new ApiResponse(200, "Rating and mapping soft-deleted", rating));
   } catch (error) {
+    console.log(error)
     next(error);
   }
 };
