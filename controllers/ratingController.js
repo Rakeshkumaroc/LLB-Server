@@ -218,21 +218,21 @@ const getRatingsByCourseForAdmin = async (req, res, next) => {
 const getTestimonialRatings = async (req, res, next) => {
   try {
     const mappings = await RatingMapping.find({ isDeleted: false });
-
+console.log(mappings)
     if (!mappings.length) {
       return next(new ApiError("No ratings found", 404));
     }
 
     const ratingIds = mappings.map((m) => m.ratingId);
     const userIds = mappings.map((m) => m.userId);
-
+console.log(ratingIds)
     const ratings = await Rating.find({
       _id: { $in: ratingIds },
       isDeleted: false,
       isActive: true,
       showInTestimonial: true,
     });
-
+  console.log(ratings)
     const validRatingIds = new Set(ratings.map((r) => r._id.toString()));
     const users = await userModel.find({ _id: { $in: userIds } });
 

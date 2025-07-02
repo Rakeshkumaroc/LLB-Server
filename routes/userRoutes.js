@@ -3,6 +3,7 @@ const {
   signUp,
   login,
   addChildAdmin,
+  getAllInstitutes
 } = require("../controllers/userController");
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 const router = express.Router();
@@ -15,6 +16,13 @@ router.post(
   tokenChecker,
   allowRoles(["admin"]),
   addChildAdmin
+);
+
+router.get(
+  "/get-all-institutes",
+  tokenChecker,
+  allowRoles(["admin"]),
+  getAllInstitutes
 );
 
 module.exports = router;

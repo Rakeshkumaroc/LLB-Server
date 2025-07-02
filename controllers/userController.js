@@ -237,4 +237,19 @@ PropMetaVerse
   }
 };
 
-module.exports = { signUp, login, addChildAdmin };
+
+// GET ALL INSTITUTES
+const getAllInstitutes = async (req, res, next) => {
+  try {
+    const institutes = await userModel.find({
+      role: "institute",
+      isDeleted: false,
+    })
+
+    res.status(200).json(new ApiResponse(200, "All institutes fetched successfully", institutes));
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { signUp, login, addChildAdmin ,getAllInstitutes };
