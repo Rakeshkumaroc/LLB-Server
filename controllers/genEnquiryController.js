@@ -109,10 +109,40 @@ const deleteGeneralEnquiry = async (req, res, next) => {
   }
 };
 
+// 🔹 Get Single General Enquiry by ID with Full Course Info
+const getSingleGeneralEnquiryById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const enquiry = await GeneralEnquiry.findOne({
+      _id: id,
+      isDeleted: false,
+    }).lean();
+
+    if (!enquiry) {
+      return next(new ApiError("General enquiry not found", 404));
+    }
+
+    const course = await courseModel.findById(enquiry.courseId).lean();
+
+    const enriched = {
+      ...enquiry,
+      courseDetails: course || null,
+    };
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "General enquiry fetched", enriched));
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createGeneralEnquiry,
   getAllGeneralEnquiries,
   updateGeneralEnquiryStatus,
   deleteGeneralEnquiry,
+  getSingleGeneralEnquiryById
 };
 

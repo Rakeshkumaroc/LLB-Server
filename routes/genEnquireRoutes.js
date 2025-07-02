@@ -5,6 +5,7 @@ const {
   getAllGeneralEnquiries,
   updateGeneralEnquiryStatus,
   deleteGeneralEnquiry,
+  getSingleGeneralEnquiryById
 } = require("../controllers/genEnquiryController");
 
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
@@ -33,5 +34,13 @@ router.delete(
   allowRoles(["admin", "childAdmin"]),
   deleteGeneralEnquiry
 );
+
+router.get(
+  "/get-single-enquiry-by-id/:id",
+  tokenChecker,
+  allowRoles(["admin", "childAdmin"]),
+  getSingleGeneralEnquiryById
+);
+
 
 module.exports = router;
