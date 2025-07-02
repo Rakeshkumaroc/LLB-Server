@@ -34,8 +34,8 @@ router.get(
   getAllStudent
 );
 
-router.put("/update-user", tokenChecker, updateUser);
+router.put("/update-user/:id", tokenChecker, updateUser);
 
-router.delete("/delete-user", tokenChecker, getAllStudent);
+router.delete("/delete-user/:id", tokenChecker, getAllStudent);
 
 module.exports = router;
