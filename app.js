@@ -10,6 +10,7 @@ const  batchRoutes = require("./routes/batchRoutes");
 const  ratingRoutes = require("./routes/ratingRoutes");
 const  moduleRoutes = require("./routes/moduleRoutes");
 const  raisedDealRoutes = require("./routes/raisedDealRoutes");
+const  genEnquireRoutes = require("./routes/genEnquireRoutes");
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -38,6 +39,7 @@ app.use("/api/v1/batch", batchRoutes);
 app.use("/api/v1/rating", ratingRoutes);
 app.use("/api/v1/module", moduleRoutes);
 app.use("/api/v1/raised-deal", raisedDealRoutes);
+app.use("/api/v1/gen-enquiry", genEnquireRoutes);
 //  Test Route
 app.get("/api/test", (req, res) => {
   res.status(200).json({ message: "OK" });
