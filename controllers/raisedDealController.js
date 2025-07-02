@@ -2,6 +2,7 @@ const RaisedDeal = require("../models/raisedDealModel");
 const DealMapping = require("../models/raisedDealMapping");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+const userModel = require("../models/userModel");
 
 const createRaisedDeal = async (req, res, next) => {
   try {
@@ -58,7 +59,7 @@ const getAllDeals = async (req, res, next) => {
         _id: map.raisedDealId,
         isDeleted: false,
       });
-      const user = await User.findOne({ _id: map.userId, isDeleted: false });
+      const user = await userModel.findOne({ _id: map.userId, isDeleted: false });
 
       if (deal) {
         allDeals.push({
@@ -89,7 +90,7 @@ const getSingleDealById = async (req, res, next) => {
     if (!mapping) return next(new ApiError("Mapping not found", 404));
 
     const deal = await RaisedDeal.findOne({ _id: id, isDeleted: false });
-    const user = await User.findOne({ _id: mapping.userId, isDeleted: false });
+    const user = await userModel.findOne({ _id: mapping.userId, isDeleted: false });
 
     if (!deal || !user)
       return next(new ApiError("Deal or user not found", 404));
@@ -156,6 +157,34 @@ const updateDealStatus = async (req, res, next) => {
     res
       .status(200)
       .json(new ApiResponse(200, `Deal ${status} successfully`, updatedDeal));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// 🔹 Delete Raised Deal (soft delete both deal + mapping)
+const deleteRaisedDeal = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Find deal
+    const deal = await RaisedDeal.findOne({ _id: id, isDeleted: false });
+    if (!deal) return next(new ApiError("Deal not found", 404));
+
+    // 2. Soft delete deal
+    deal.isDeleted = true;
+    await deal.save();
+
+    // 3. Soft delete mapping(s)
+    await DealMapping.updateMany(
+      { raisedDealId: id },
+      { $set: { isDeleted: true } }
+    );
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Deal and mapping soft-deleted successfully"));
   } catch (error) {
     next(error);
   }

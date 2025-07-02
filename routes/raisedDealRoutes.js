@@ -12,13 +12,13 @@ const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 
 const adminRoles = ["admin"];
 
-//  USER ROUTES 
+//  USER ROUTES
 
 // Institute (logged-in) raises a deal request
 
 router.post("/create-raised-deal", tokenChecker, createRaisedDeal);
 
-//  ADMIN ROUTES 
+//  ADMIN ROUTES
 
 router.get(
   "/all-raised-deals",
