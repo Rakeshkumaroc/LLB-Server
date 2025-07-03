@@ -87,8 +87,42 @@ const createCourse = async (req, res, next) => {
 // ======================= GET ALL COURSES =========================
 const getAllCourses = async (req, res, next) => {
   try {
+    // Fetch all active and non-deleted courses
     const courses = await Course.find({ isDeleted: false, isActive: true });
-    res.status(200).json(new ApiResponse(200, "Course list", courses));
+
+    // Array to store enriched course data
+    const enrichedCourses = [];
+
+    // Iterate over each course to fetch related data
+    for (const course of courses) {
+      // Fetch price mapping and price details
+      const priceMap = await CoursePriceMapping.findOne({
+        courseId: course._id,
+        isDeleted: false,
+      });
+      const price = priceMap ? await Price.findById(priceMap.priceId) : null;
+
+      // Fetch special price mapping and special price details
+      const specialMap = await SpecialPriceMapping.findOne({
+        courseId: course._id,
+        isDeleted: false,
+      });
+      const specialPrice = specialMap
+        ? await SpecialPrice.findById(specialMap.specialPriceId)
+        : null;
+
+      // Combine course data with price and special price (no modules)
+      enrichedCourses.push({
+        ...course.toObject(),
+        price,
+        specialPrice,
+      });
+    }
+
+    // Send response with enriched course data
+    res.status(200).json(
+      new ApiResponse(200, "Course list", enrichedCourses)
+    );
   } catch (error) {
     next(error);
   }
