@@ -15,17 +15,17 @@ const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 // =============== USER ROUTES ===============
 
 // 🔹 User creates course enquiry
-router.post("/create", tokenChecker, createCourseEnquiry);
+router.post("/create-course-enquiry", tokenChecker, createCourseEnquiry);
 
 // 🔹 Logged-in user gets their total course enquiries
-router.get("/my-enquiry-count", tokenChecker, getUserCourseEnquiryStats);
+router.get("/get-user-course-enquiry-stats", tokenChecker, getUserCourseEnquiryStats);
 
 // =============== ADMIN ROUTES ===============
 const adminOnly = ["admin"];
 
 // 🔹 Admin fetches all course enquiries (with course name)
 router.get(
-  "/all",
+  "/get-all-course-enquiries",
   tokenChecker,
   allowRoles(adminOnly),
   getAllCourseEnquiries
@@ -33,7 +33,7 @@ router.get(
 
 // 🔹 Admin updates enquiry status
 router.put(
-  "/update-status/:id",
+  "/update-status-enquiry/:id",
   tokenChecker,
   allowRoles(adminOnly),
   updateCourseEnquiryStatus
@@ -41,7 +41,7 @@ router.put(
 
 // 🔹 Admin deletes enquiry (soft delete + mapping)
 router.delete(
-  "/delete/:id",
+  "/delete-enquiry/:id",
   tokenChecker,
   allowRoles(adminOnly),
   deleteCourseEnquiry
