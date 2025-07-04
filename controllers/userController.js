@@ -252,6 +252,20 @@ const getAllInstitutes = async (req, res, next) => {
   }
 };
 
+// GET ALL INSTITUTES
+const getAllChildAdmin = async (req, res, next) => {
+  try {
+    const childAdmins = await userModel.find({
+      role: "childAdmin",
+      isDeleted: false,
+    })
+
+    res.status(200).json(new ApiResponse(200, "All childAdmin fetched successfully", childAdmins));
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 // GET ALL INSTITUTES
 const getAllStudent = async (req, res, next) => {
@@ -363,4 +377,4 @@ const getSingleUserById = async (req, res, next) => {
   }
 };
 
-module.exports = { signUp, login, addChildAdmin ,getAllInstitutes ,getAllStudent ,updateUser ,deleteUser,getSingleUserById};
+module.exports = { signUp, login, addChildAdmin ,getAllInstitutes ,getAllStudent ,updateUser ,deleteUser,getSingleUserById ,getAllChildAdmin};
