@@ -39,15 +39,15 @@ router.put(
   updateCourseEnquiryStatus
 );
 
-// 🔹 Admin deletes enquiry (soft delete + mapping)
+//  Admin deletes enquiry (soft delete + mapping)
 router.delete(
   "/delete-enquiry/:id",
   tokenChecker,
-  allowRoles(adminOnly),
   deleteCourseEnquiry
 );
 
-// 🔹 Admin gets enquiry count for a course
+
+//  Admin gets enquiry count for a course
 router.get(
   "/course-enquiry-count/:courseId",
   tokenChecker,

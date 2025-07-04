@@ -5,7 +5,8 @@ const CourseEnquiryFollowUpMapping = require("../models/followUpMapping");
 const CourseEnquiry = require("../models/courseEnquiry");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-
+const { sendMail } = require("../utils/sendMail");
+const moment = require("moment");
 const createCourseEnquiryFollowUp = async (req, res, next) => {
   try {
     const { enquiryId, mode, message, nextFollowUpDate, nextFollowUpTime } = req.body;
@@ -88,6 +89,47 @@ const getFollowUpsByEnquiryId = async (req, res, next) => {
   }
 };
 
+const sendFollowUpReminders = async () => {
+  try {
+    const todayStart = moment().startOf("day").toDate();
+    const todayEnd = moment().endOf("day").toDate();
 
+    const mappings = await FollowUpMapping.find({ isDeleted: false })
+      .populate("followUpId")
+      .populate("childAdminId")
+      .populate("enquiryId");
 
-module.exports = { createCourseEnquiryFollowUp,getFollowUpsByEnquiryId };
+    const todayFollowUps = mappings.filter((m) => {
+      const f = m.followUpId;
+      return (
+        f &&
+        !f.isDeleted &&
+        f.nextFollowUpDate >= todayStart &&
+        f.nextFollowUpDate <= todayEnd
+      );
+    });
+
+    for (const m of todayFollowUps) {
+      const { childAdminId, followUpId, enquiryId } = m;
+
+      if (!childAdminId?.email) continue;
+
+      await sendMail({
+        to: childAdminId.email,
+        subject: `🔔 Follow-up Reminder: ${enquiryId?.name || "Unknown"}`,
+        html: `
+          <h3>Reminder: Follow-Up Scheduled Today</h3>
+          <p><strong>Mode:</strong> ${followUpId.mode}</p>
+          <p><strong>Message:</strong> ${followUpId.message}</p>
+          <p><strong>Time:</strong> ${followUpId.nextFollowUpTime}</p>
+        `,
+      });
+    }
+
+    console.log(`✅ ${todayFollowUps.length} reminder(s) sent.`);
+  } catch (err) {
+    console.error("❌ Error sending reminders:", err.message);
+  }
+};
+
+module.exports = { createCourseEnquiryFollowUp,getFollowUpsByEnquiryId ,sendFollowUpReminders };
