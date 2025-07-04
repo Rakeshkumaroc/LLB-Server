@@ -33,7 +33,7 @@ router.get(
 );
 
 router.get(
-  "/get-single-course-enquiry",
+  "/get-single-course-enquiry/:id",
   tokenChecker,
   getSingleCourseEnquiry
 );
