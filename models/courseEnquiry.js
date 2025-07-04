@@ -22,11 +22,6 @@ const courseEnquirySchema = new mongoose.Schema(
       enum: ["pending", "in-progress", "closedAndWon", "closedAndLost","closeWithOutReason"],
       default: "pending",
     },
-    closureMessage: {
-      type: String,
-      trim: true,
-      default: null,
-    },
     isDeleted: {
       type: Boolean,
       default: false,

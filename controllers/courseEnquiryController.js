@@ -90,7 +90,7 @@ const getAllCourseEnquiries = async (req, res, next) => {
   }
 };
 
-// 🔹 Update Enquiry Status (No closureMessage logic)
+// 🔹 Update Enquiry Status (No logic)
 const updateCourseEnquiryStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -196,21 +196,18 @@ const getUserCourseEnquiryStats = async (req, res, next) => {
 
     const enquiryIds = mappings.map((m) => m.enquiryId);
 
-    const totalEnquiries = await CourseEnquiry.countDocuments({
+    const enquiries = await CourseEnquiry.find({
       _id: { $in: enquiryIds },
       isDeleted: false,
-    });
+    }).select("name email message status createdAt updatedAt");
 
     res.status(200).json(
-      new ApiResponse(200, "Total course enquiries fetched", {
-        userId,
-        totalEnquiries,
-      })
+      new ApiResponse(200, "Course enquiries fetched", enquiries)
     );
   } catch (error) {
     next(error);
   }
-};
+};;
 
 // 🔹 Get Count by Course
 const getEnquiryCountByCourseId = async (req, res, next) => {
