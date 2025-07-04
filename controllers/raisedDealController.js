@@ -1,43 +1,35 @@
+// Existing imports...
 const RaisedDeal = require("../models/raisedDealModel");
 const DealMapping = require("../models/raisedDealMapping");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const userModel = require("../models/userModel");
 
+// ✅ Admin: Create Deal
 const createRaisedDeal = async (req, res, next) => {
   try {
-    const { requestedPrice, requestedSeats, note, courseId } = req.body;
+    const { agreementPrice, seats, adminMessage, courseId, userId } = req.body;
 
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return next(new ApiError("Unauthorized", 401));
-    }
-
-    // ✅ Validate required fields
-    if (!requestedPrice || !requestedSeats || !note || !courseId) {
+    if (!agreementPrice || !seats || !adminMessage || !courseId || !userId) {
       return next(
-        new ApiError("Missing required fields: price, seats, courseId", 400)
+        new ApiError("Missing required fields: price, seats, courseId, userId", 400)
       );
     }
 
-    // 🔹 Create Raised Deal
     const raisedDeal = await RaisedDeal.create({
-      requestedPrice,
-      requestedSeats,
-      note,
+      agreementPrice,
+      seats,
+      adminMessage,
     });
 
-    // 🔹 Create Mapping
     const mapping = await DealMapping.create({
       courseId,
       userId,
       raisedDealId: raisedDeal._id,
     });
 
-    //  Response
     return res.status(201).json(
-      new ApiResponse(201, "Raised deal created and mapped successfully", {
+      new ApiResponse(201, "Deal created successfully", {
         raisedDeal,
         mapping,
       })
@@ -47,7 +39,53 @@ const createRaisedDeal = async (req, res, next) => {
   }
 };
 
-// 🔹 1. Get All Deals
+// ✅ Admin: Update Deal
+const updateRaisedDeal = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { agreementPrice, seats, adminMessage } = req.body;
+
+    const updated = await RaisedDeal.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { agreementPrice, seats, adminMessage },
+      { new: true }
+    );
+
+    if (!updated) return next(new ApiError("Deal not found", 404));
+
+    res.status(200).json(
+      new ApiResponse(200, "Deal updated successfully", updated)
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ✅ Admin: Delete Deal
+const deleteRaisedDeal = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const deal = await RaisedDeal.findOne({ _id: id, isDeleted: false });
+    if (!deal) return next(new ApiError("Deal not found", 404));
+
+    deal.isDeleted = true;
+    await deal.save();
+
+    await DealMapping.updateMany(
+      { raisedDealId: id },
+      { $set: { isDeleted: true, isActive: false, validTo: new Date() } }
+    );
+
+    res.status(200).json(
+      new ApiResponse(200, "Deal and mapping deleted successfully")
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ✅ Admin: Get All Deals (with userName)
 const getAllDeals = async (req, res, next) => {
   try {
     const mappings = await DealMapping.find({ isDeleted: false });
@@ -59,7 +97,11 @@ const getAllDeals = async (req, res, next) => {
         _id: map.raisedDealId,
         isDeleted: false,
       });
-      const user = await userModel.findOne({ _id: map.userId, isDeleted: false });
+
+      const user = await userModel.findOne({
+        _id: map.userId,
+        isDeleted: false,
+      });
 
       if (deal) {
         allDeals.push({
@@ -69,15 +111,73 @@ const getAllDeals = async (req, res, next) => {
       }
     }
 
-    res
-      .status(200)
-      .json(new ApiResponse(200, "All deals with userName", allDeals));
-  } catch (error) {
-    next(error);
+    res.status(200).json(new ApiResponse(200, "All deals with user", allDeals));
+  } catch (err) {
+    next(err);
   }
 };
 
-// 🔹 2. Get Single Deal by ID
+// ✅ Institute: Get My Deals
+const getDealsForUser = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId;
+
+    const mappings = await DealMapping.find({
+      userId,
+      isDeleted: false,
+    });
+
+    const userDeals = [];
+
+    for (const map of mappings) {
+      const deal = await RaisedDeal.findOne({
+        _id: map.raisedDealId,
+        isDeleted: false,
+      });
+
+      if (deal) {
+        userDeals.push(deal);
+      }
+    }
+
+    res.status(200).json(
+      new ApiResponse(200, "Your raised deals fetched", userDeals)
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ✅ Institute: Get Single Deal
+const getSingleDealForUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+
+    const mapping = await DealMapping.findOne({
+      raisedDealId: id,
+      userId,
+      isDeleted: false,
+    });
+
+    if (!mapping) return next(new ApiError("No access to this deal", 403));
+
+    const deal = await RaisedDeal.findOne({
+      _id: id,
+      isDeleted: false,
+    });
+
+    if (!deal) return next(new ApiError("Deal not found", 404));
+
+    res.status(200).json(
+      new ApiResponse(200, "Deal fetched successfully", deal)
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 const getSingleDealById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -89,110 +189,35 @@ const getSingleDealById = async (req, res, next) => {
 
     if (!mapping) return next(new ApiError("Mapping not found", 404));
 
-    const deal = await RaisedDeal.findOne({ _id: id, isDeleted: false });
-    const user = await userModel.findOne({ _id: mapping.userId, isDeleted: false });
+    const deal = await RaisedDeal.findOne({
+      _id: id,
+      isDeleted: false,
+    });
 
-    if (!deal || !user)
-      return next(new ApiError("Deal or user not found", 404));
+    const user = await userModel.findOne({
+      _id: mapping.userId,
+      isDeleted: false,
+    });
 
-    res.status(200).json(
-      new ApiResponse(200, "Deal fetched with user", {
-        ...deal.toObject(),
-        user,
-      })
-    );
-  } catch (error) {
-    next(error);
-  }
-};
-
-const updateDealStatus = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { status, adminMessage, negotiatedPrice } = req.body;
-
-    //  Validate status
-    if (!["pending", "approved", "rejected"].includes(status)) {
-      return next(new ApiError("Invalid status", 400));
-    }
-
-    const updateData = { status }; // always include status
-
-    // 💬 Add admin message if provided
-    if (adminMessage !== undefined) {
-      updateData.adminMessage = adminMessage;
-    }
-
-    //  Only allow negotiatedPrice update when approved
-    if (status === "approved") {
-      if (negotiatedPrice === undefined || isNaN(negotiatedPrice)) {
-        return next(
-          new ApiError(
-            "Negotiated price is required and must be a number when approving",
-            400
-          )
-        );
-      }
-      updateData.negotiatedPrice = negotiatedPrice;
-    }
-
-    //  If status is rejected and negotiatedPrice is sent, block it
-    if (status === "rejected" && negotiatedPrice !== undefined) {
-      return next(
-        new ApiError(
-          "Negotiated price is not allowed when rejecting a deal",
-          400
-        )
-      );
-    }
-
-    const updatedDeal = await RaisedDeal.findOneAndUpdate(
-      { _id: id, isDeleted: false },
-      updateData,
-      { new: true }
-    );
-
-    if (!updatedDeal) return next(new ApiError("Deal not found", 404));
-
-    res
-      .status(200)
-      .json(new ApiResponse(200, `Deal ${status} successfully`, updatedDeal));
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// 🔹 Delete Raised Deal (soft delete both deal + mapping)
-const deleteRaisedDeal = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    // 1. Find deal
-    const deal = await RaisedDeal.findOne({ _id: id, isDeleted: false });
     if (!deal) return next(new ApiError("Deal not found", 404));
 
-    // 2. Soft delete deal
-    deal.isDeleted = true;
-    await deal.save();
-
-    // 3. Soft delete mapping(s)
-    await DealMapping.updateMany(
-      { raisedDealId: id },
-      { $set: { isDeleted: true } }
+    res.status(200).json(
+      new ApiResponse(200, "Deal with mapped user fetched", {
+        ...deal.toObject(),
+        user: user || null,
+      })
     );
-
-    res
-      .status(200)
-      .json(new ApiResponse(200, "Deal and mapping soft-deleted successfully"));
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
 module.exports = {
   createRaisedDeal,
+  updateRaisedDeal,
+  deleteRaisedDeal,
   getAllDeals,
-  updateDealStatus,
   getSingleDealById,
+  getDealsForUser,
+  getSingleDealForUser,
 };

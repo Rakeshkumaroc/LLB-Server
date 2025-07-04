@@ -3,39 +3,66 @@ const router = express.Router();
 
 const {
   createRaisedDeal,
+  updateRaisedDeal,
+  deleteRaisedDeal,
   getAllDeals,
   getSingleDealById,
-  updateDealStatus,
+  getDealsForUser,
+  getSingleDealForUser,
 } = require("../controllers/raisedDealController");
 
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 
 const adminRoles = ["admin"];
 
-//  USER ROUTES
+// ======================= ADMIN ROUTES =======================
 
-// Institute (logged-in) raises a deal request
+// Create new raised deal
+router.post(
+  "/create-raised-deal",
+  tokenChecker,
+  allowRoles(adminRoles),
+  createRaisedDeal
+);
 
-router.post("/create-raised-deal", tokenChecker, createRaisedDeal);
+// Update raised deal by ID
+router.put(
+  "/update-raised-deal/:id",
+  tokenChecker,
+  allowRoles(adminRoles),
+  updateRaisedDeal
+);
 
-//  ADMIN ROUTES
+// Delete raised deal by ID
+router.delete(
+  "/delete-raised-deal/:id",
+  tokenChecker,
+  allowRoles(adminRoles),
+  deleteRaisedDeal
+);
 
+// Get all raised deals (admin)
 router.get(
-  "/all-raised-deals",
+  "/get-all-raised-deals",
   tokenChecker,
   allowRoles(adminRoles),
   getAllDeals
 );
 
-//  Get a specific deal
-router.get("/get-single-raised-deal/:id", tokenChecker, getSingleDealById);
-
-// Admin Update status, message, negotiated price (combined)
-router.put(
-  "/update-raised-deal-status/:id",
+// Get single raised deal (admin)
+router.get(
+  "/get-raised-deal/:id",
   tokenChecker,
   allowRoles(adminRoles),
-  updateDealStatus
+  getSingleDealById
 );
+
+// ======================= INSTITUTE ROUTES (No role check, just token) =======================
+
+// Get all deals for logged-in user
+router.get("/get-deals-for-user", tokenChecker, getDealsForUser);
+
+// Get single deal for logged-in user
+router.get("/get-single-deal-for-user/:id", tokenChecker, getSingleDealForUser);
 
 module.exports = router;
