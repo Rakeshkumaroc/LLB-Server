@@ -6,8 +6,8 @@ const {
   getAllCourseEnquiries,
   updateCourseEnquiryStatus,
   deleteCourseEnquiry,
-  getUserCourseEnquiryStats,
-  getEnquiryCountByCourseId,
+  getCourseEnquiryByUserId,
+  getEnquiriesByCourseId,
   getSingleCourseEnquiry
 } = require("../controllers/courseEnquiryController");
 
@@ -19,7 +19,7 @@ const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 router.post("/create-course-enquiry", tokenChecker, createCourseEnquiry);
 
 // 🔹 Logged-in user gets their total course enquiries
-router.get("/get-user-course-enquiry-stats", tokenChecker, getUserCourseEnquiryStats);
+router.get("/get-course-enquiry-by-user-id", tokenChecker, getCourseEnquiryByUserId);
 
 // =============== ADMIN ROUTES ===============
 const adminOnly = ["admin"];
@@ -42,7 +42,6 @@ router.get(
 router.put(
   "/update-status-enquiry/:id",
   tokenChecker,
-  allowRoles(adminOnly),
   updateCourseEnquiryStatus
 );
 
@@ -56,10 +55,10 @@ router.delete(
 
 //  Admin gets enquiry count for a course
 router.get(
-  "/course-enquiry-count/:courseId",
+  "/get-enquiries-by-course-id/:courseId",
   tokenChecker,
   allowRoles(adminOnly),
-  getEnquiryCountByCourseId
+ getEnquiriesByCourseId
 );
 
 module.exports = router;

@@ -182,7 +182,7 @@ const getSingleCourseEnquiry = async (req, res, next) => {
 };
 
 // 🔹 User Stats (Total Enquiries)
-const getUserCourseEnquiryStats = async (req, res, next) => {
+const getCourseEnquiryByUserId = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
     if (!userId) {
@@ -210,13 +210,14 @@ const getUserCourseEnquiryStats = async (req, res, next) => {
 };;
 
 // 🔹 Get Count by Course
-const getEnquiryCountByCourseId = async (req, res, next) => {
+const getEnquiriesByCourseId = async (req, res, next) => {
   try {
     const { courseId } = req.params;
     if (!courseId) {
       return next(new ApiError("courseId is required", 400));
     }
 
+    // 1. Find all mappings for that course
     const mappings = await CourseEnquiryMapping.find({
       courseId,
       isDeleted: false,
@@ -224,16 +225,18 @@ const getEnquiryCountByCourseId = async (req, res, next) => {
 
     const enquiryIds = mappings.map((m) => m.enquiryId);
 
-    const enquiryCount = await CourseEnquiry.countDocuments({
+    // 2. Find all enquiries from those IDs
+    const enquiries = await CourseEnquiry.find({
       _id: { $in: enquiryIds },
       isDeleted: false,
-    });
+    }).select("name email message status createdAt");
+
+    if (!enquiries.length) {
+      return next(new ApiError("No enquiries found for this course", 404));
+    }
 
     res.status(200).json(
-      new ApiResponse(200, "Course enquiry count fetched", {
-        courseId,
-        enquiryCount,
-      })
+      new ApiResponse(200, "Course enquiries fetched successfully", enquiries)
     );
   } catch (error) {
     next(error);
@@ -245,7 +248,7 @@ module.exports = {
   getAllCourseEnquiries,
   updateCourseEnquiryStatus,
   getSingleCourseEnquiry,
-  getUserCourseEnquiryStats,
-  getEnquiryCountByCourseId,
+  getCourseEnquiryByUserId,
+  getEnquiriesByCourseId,
   deleteCourseEnquiry,
 };
