@@ -4,6 +4,7 @@ const CourseEnquiry = require("../models/courseEnquiry");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const courseModel = require("../models/courseModel");
+const courseEnquiryMapping = require("../models/courseEnquiryMapping");
 
 const assignCourseEnquiry = async (req, res, next) => {
   try {
@@ -14,7 +15,7 @@ const assignCourseEnquiry = async (req, res, next) => {
     if (!enquiryId || !childAdminId || !priority) {
       return next(new ApiError("enquiryId, childAdminId, and priority are required", 400));
     }
-
+console.log(enquiryId)
     const validPriorities = ["low", "medium", "high"];
     if (!validPriorities.includes(priority)) {
       return next(new ApiError("Invalid priority", 400));
@@ -55,7 +56,7 @@ const assignCourseEnquiry = async (req, res, next) => {
 const getAssignedEnquiriesForChildAdmin = async (req, res, next) => {
   try {
     const childAdminId = req.user?.userId;
-
+console.log(childAdminId)
     if (!childAdminId) {
       return next(new ApiError("Unauthorized: userId missing", 401));
     }
@@ -85,7 +86,7 @@ const getAssignedEnquiriesForChildAdmin = async (req, res, next) => {
     });
 
     // Step 4: Get courseIds from CourseEnquiryMapping
-    const mappings = await CourseEnquiryMapping.find({
+    const mappings = await courseEnquiryMapping.find({
       enquiryId: { $in: enquiryIds },
       isDeleted: false,
     });
