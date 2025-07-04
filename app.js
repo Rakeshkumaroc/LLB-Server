@@ -12,6 +12,7 @@ const  moduleRoutes = require("./routes/moduleRoutes");
 const  raisedDealRoutes = require("./routes/raisedDealRoutes");
 const  genEnquireRoutes = require("./routes/genEnquireRoutes");
 const  courseEnquireRoutes = require("./routes/courseEnquiryRoutes");
+const  enquireAssignRoutes = require("./routes/enquiryAssignRoutes");
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -42,6 +43,7 @@ app.use("/api/v1/module", moduleRoutes);
 app.use("/api/v1/raised-deal", raisedDealRoutes);
 app.use("/api/v1/gen-enquiry", genEnquireRoutes);
 app.use("/api/v1/course-enquiry", courseEnquireRoutes);
+app.use("/api/v1/enquire-assign", enquireAssignRoutes);
 //  Test Route
 app.get("/api/test", (req, res) => {
   res.status(200).json({ message: "OK" });
