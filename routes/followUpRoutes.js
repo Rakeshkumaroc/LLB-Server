@@ -13,7 +13,7 @@ const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 router.post(
   "/create-follow-up",
   tokenChecker,
-  allowRoles("childAdmin"),
+  allowRoles(["childAdmin"]),
   createCourseEnquiryFollowUp
 );
 
@@ -21,7 +21,7 @@ router.post(
 router.get(
   "/get-followups/:enquiryId",
   tokenChecker,
-  allowRoles("admin", "childAdmin"),
+  allowRoles(["admin", "childAdmin"]),
   getFollowUpsByEnquiryId
 );
 

@@ -94,7 +94,7 @@ const sendFollowUpReminders = async () => {
     const todayStart = moment().startOf("day").toDate();
     const todayEnd = moment().endOf("day").toDate();
 
-    const mappings = await FollowUpMapping.find({ isDeleted: false })
+    const mappings = await CourseEnquiryFollowUpMapping.find({ isDeleted: false })
       .populate("followUpId")
       .populate("childAdminId")
       .populate("enquiryId");
