@@ -8,6 +8,7 @@ const {
   deleteCourseEnquiry,
   getUserCourseEnquiryStats,
   getEnquiryCountByCourseId,
+  getSingleCourseEnquiry
 } = require("../controllers/courseEnquiryController");
 
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
@@ -29,6 +30,12 @@ router.get(
   tokenChecker,
   allowRoles(adminOnly),
   getAllCourseEnquiries
+);
+
+router.get(
+  "/get-single-course-enquiry",
+  tokenChecker,
+  getSingleCourseEnquiry
 );
 
 // 🔹 Admin updates enquiry status
