@@ -187,25 +187,29 @@ const getSingleDealById = async (req, res, next) => {
       raisedDealId: id,
       isDeleted: false,
     });
-
     if (!mapping) return next(new ApiError("Mapping not found", 404));
 
     const deal = await RaisedDeal.findOne({
       _id: id,
       isDeleted: false,
     });
+    if (!deal) return next(new ApiError("Deal not found", 404));
 
     const user = await userModel.findOne({
       _id: mapping.userId,
       isDeleted: false,
     });
 
-    if (!deal) return next(new ApiError("Deal not found", 404));
+    const course = await Course.findOne({
+      _id: mapping.courseId,
+      isDeleted: false,
+    });
 
     res.status(200).json(
-      new ApiResponse(200, "Deal with mapped user fetched", {
+      new ApiResponse(200, "Deal with mapped user and course fetched", {
         ...deal.toObject(),
         user: user || null,
+        course: course || null,
       })
     );
   } catch (err) {

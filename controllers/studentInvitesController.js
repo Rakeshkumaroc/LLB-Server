@@ -13,29 +13,48 @@ const sendStudentInvites = async (req, res, next) => {
     const { emails } = req.body;
     const instituteId = req.user.userId;
 
+    // Validate emails array
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return next(new ApiError("Please provide at least one email", 400));
     }
 
+    // Simple email regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    const invalidEmails = emails.filter((email) => !emailRegex.test(email));
+    if (invalidEmails.length > 0) {
+      return next(
+        new ApiError(
+          `Invalid email(s): ${invalidEmails.join(", ")}`,
+          400
+        )
+      );
+    }
+
+    // Process valid emails
     for (const email of emails) {
       const token = jwt.sign({ email, instituteId }, process.env.JWT_SECRET_KEY, {
         expiresIn: "1d",
       });
 
-      await StudentInvite.create({ email, token });
+      await StudentInvite.create({ email, token, instituteId });
 
       const inviteLink = `${process.env.FRONTEND_URL}/student-registration/${token}`;
 
       const html = `
+        <p>Hello,</p>
         <p>You’ve been invited to register as a student under your institute.</p>
         <p>Click the button below to complete your registration:</p>
-        <a href="${inviteLink}" style="padding:10px 20px;background:#007BFF;color:#fff;text-decoration:none;">Register Now</a>
+        <a href="${inviteLink}" style="padding:10px 20px;background:#007BFF;color:#fff;text-decoration:none;border-radius:5px;">Register Now</a>
+        <p>This link will expire in 24 hours.</p>
       `;
 
       await sendMail(email, "Student Registration Invitation", `Click here: ${inviteLink}`, html);
     }
 
-    res.status(200).json(new ApiResponse(200, "Invitations sent successfully"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Invitations sent successfully"));
   } catch (error) {
     next(error);
   }
