@@ -130,7 +130,7 @@ const getAllStudentsByInstituteId = async (req, res, next) => {
     const studentIds = mappings.map((m) => m.studentId);
 
     // 2. Fetch student details
-    const students = await User.find({
+    const students = await userModel.find({
       _id: { $in: studentIds },
       role: "instituteStudent",
       isDeleted: false,
