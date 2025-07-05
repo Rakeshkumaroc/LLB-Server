@@ -122,11 +122,11 @@ const getAllDeals = async (req, res, next) => {
 const getDealsForUser = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
+    if (!userId) {
+      return next(new ApiError("Unauthorized", 401));
+    }
 
-    const mappings = await DealMapping.find({
-      userId,
-      isDeleted: false,
-    });
+    const mappings = await DealMapping.find({ userId, isDeleted: false });
 
     const userDeals = [];
 
@@ -135,20 +135,32 @@ const getDealsForUser = async (req, res, next) => {
         _id: map.raisedDealId,
         isDeleted: false,
       });
+      const course = await courseModel.findOne({
+        _id: map.courseId,
+        isDeleted: false,
+      });
 
       if (deal) {
-        userDeals.push(deal);
+        userDeals.push({
+          ...deal.toObject(),
+          course: course
+            ? {
+                courseName: course.courseName,
+                duration: course.duration || null,
+                category: course.category || null,
+              }
+            : null,
+        });
       }
     }
 
-    res.status(200).json(
-      new ApiResponse(200, "Your raised deals fetched", userDeals)
-    );
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Your raised deals fetched", userDeals));
   } catch (err) {
     next(err);
   }
 };
-
 // ✅ Institute: Get Single Deal
 const getSingleDealForUser = async (req, res, next) => {
   try {
