@@ -4,6 +4,8 @@ const router = express.Router();
 const {
   assignCourseEnquiry,
   getAssignedEnquiriesForChildAdmin,
+  getAssignedEnquiriesbyChildAdminId,
+  getSingleAssignedEnquiryById,
 } = require("../controllers/enquiryAssignController");
 
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
@@ -25,6 +27,19 @@ router.get(
   tokenChecker,
   allowRoles(childAdminRoles),
   getAssignedEnquiriesForChildAdmin
+);
+router.get(
+  "/get-assigned-enquiries-by-child-admin-id/:childAdminId",
+  tokenChecker,
+  allowRoles(adminRoles),
+  getAssignedEnquiriesbyChildAdminId
+);
+ 
+router.get(
+  "/get-single-assigned-enquiry/:enquiryId",
+  tokenChecker,
+  allowRoles(childAdminRoles),
+  getSingleAssignedEnquiryById
 );
 
 module.exports = router;
