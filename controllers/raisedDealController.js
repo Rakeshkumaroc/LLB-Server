@@ -200,7 +200,7 @@ const getSingleDealById = async (req, res, next) => {
       isDeleted: false,
     });
 
-    const course = await Course.findOne({
+    const course = await courseModel.findOne({
       _id: mapping.courseId,
       isDeleted: false,
     });
