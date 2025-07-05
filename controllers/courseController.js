@@ -27,6 +27,8 @@ const createCourse = async (req, res, next) => {
       price,
       specialPrice,
       modules,
+      redirectLink,
+      isLlbCourse,
     } = req.body;
 
     if (!courseName || !videoUrl || !duration || !language || !description) {
@@ -47,6 +49,8 @@ const createCourse = async (req, res, next) => {
       pdfUrl,
       isFree: isFree ?? false,
       category,
+      redirectLink,
+      isLlbCourse: isLlbCourse ?? false,
     });
 
     // Create and map modules if present
@@ -82,7 +86,6 @@ const createCourse = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // ======================= GET ALL COURSES =========================
 const getAllCourses = async (req, res, next) => {
@@ -120,9 +123,7 @@ const getAllCourses = async (req, res, next) => {
     }
 
     // Send response with enriched course data
-    res.status(200).json(
-      new ApiResponse(200, "Course list", enrichedCourses)
-    );
+    res.status(200).json(new ApiResponse(200, "Course list", enrichedCourses));
   } catch (error) {
     next(error);
   }
@@ -187,7 +188,9 @@ const updateCourse = async (req, res, next) => {
       category,
       price,
       specialPrice,
-      modules // array of module objects
+      modules,
+      redirectLink,
+      isLlbCourse,
     } = req.body;
 
     // 1. Update course
@@ -202,6 +205,8 @@ const updateCourse = async (req, res, next) => {
         pdfUrl,
         isFree,
         category,
+        redirectLink,
+        isLlbCourse,
       },
       { new: true }
     );
@@ -261,9 +266,7 @@ const updateCourse = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-}; 
-
-
+};
 
 // ======================= DELETE COURSE (SOFT DELETE) =========================
 const deleteCourse = async (req, res, next) => {
@@ -281,7 +284,10 @@ const deleteCourse = async (req, res, next) => {
     const currentDate = new Date();
 
     // 2. Soft delete CourseModuleMapping & actual CourseModules
-    const moduleMappings = await CourseModuleMapping.find({ courseId: id, isDeleted: false });
+    const moduleMappings = await CourseModuleMapping.find({
+      courseId: id,
+      isDeleted: false,
+    });
 
     await CourseModuleMapping.updateMany(
       { courseId: id },
@@ -295,7 +301,10 @@ const deleteCourse = async (req, res, next) => {
     );
 
     // 3. Soft delete CoursePriceMapping & actual Price
-    const priceMappings = await CoursePriceMapping.find({ courseId: id, isDeleted: false });
+    const priceMappings = await CoursePriceMapping.find({
+      courseId: id,
+      isDeleted: false,
+    });
     await CoursePriceMapping.updateMany(
       { courseId: id },
       { isDeleted: true, isActive: false, validTo: currentDate }
@@ -308,7 +317,10 @@ const deleteCourse = async (req, res, next) => {
     );
 
     // 4. Soft delete SpecialPriceMapping & actual SpecialPrice
-    const specialMappings = await SpecialPriceMapping.find({ courseId: id, isDeleted: false });
+    const specialMappings = await SpecialPriceMapping.find({
+      courseId: id,
+      isDeleted: false,
+    });
     await SpecialPriceMapping.updateMany(
       { courseId: id },
       { isDeleted: true, isActive: false, validTo: currentDate }
@@ -321,12 +333,15 @@ const deleteCourse = async (req, res, next) => {
     );
 
     //  Response
-    res.status(200).json(new ApiResponse(200, "Course and related data soft-deleted", course));
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, "Course and related data soft-deleted", course)
+      );
   } catch (error) {
     next(error);
   }
 };
-
 
 module.exports = {
   createCourse,

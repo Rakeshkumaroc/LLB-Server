@@ -33,12 +33,21 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: "LLB", // Could be "admin" or dynamic user later
     },
-      category: {
+    category: {
       type: String,
     },
     pdfUrl: {
       type: String,
       trim: true,
+    },
+     redirectLink: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    isLlbCourse: {
+      type: Boolean,
+      default: false,
     },
     isFree: {
       type: Boolean,

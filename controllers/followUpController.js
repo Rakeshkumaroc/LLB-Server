@@ -7,6 +7,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const { sendMail } = require("../utils/sendMail");
 const moment = require("moment");
+const userModel = require("../models/userModel");
 const createCourseEnquiryFollowUp = async (req, res, next) => {
   try {
     const { enquiryId, mode, message, nextFollowUpDate, nextFollowUpTime } = req.body;
@@ -91,45 +92,52 @@ const getFollowUpsByEnquiryId = async (req, res, next) => {
 
 const sendFollowUpReminders = async () => {
   try {
-    const todayStart = moment().startOf("day").toDate();
-    const todayEnd = moment().endOf("day").toDate();
+    const todayStart = moment.utc().startOf("day").toDate();
+    const todayEnd = moment.utc().endOf("day").toDate();
 
-    const mappings = await CourseEnquiryFollowUpMapping.find({ isDeleted: false })
-      .populate("followUpId")
-      .populate("childAdminId")
-      .populate("enquiryId");
+    const mappings = await CourseEnquiryFollowUpMapping.find({ isDeleted: false }).lean();
 
-    const todayFollowUps = mappings.filter((m) => {
-      const f = m.followUpId;
-      return (
-        f &&
-        !f.isDeleted &&
-        f.nextFollowUpDate >= todayStart &&
-        f.nextFollowUpDate <= todayEnd
-      );
-    });
+    const todayFollowUps = [];
 
-    for (const m of todayFollowUps) {
-      const { childAdminId, followUpId, enquiryId } = m;
+    for (const m of mappings) {
+      const followUp = await CourseEnquiryFollowUp.findOne({
+        _id: m.followUpId,
+        isDeleted: false,
+        nextFollowUpDate: { $gte: todayStart, $lte: todayEnd },
+      }).lean();
 
-      if (!childAdminId?.email) continue;
+      if (!followUp) continue;
 
-      await sendMail({
-        to: childAdminId.email,
-        subject: `🔔 Follow-up Reminder: ${enquiryId?.name || "Unknown"}`,
-        html: `
-          <h3>Reminder: Follow-Up Scheduled Today</h3>
-          <p><strong>Mode:</strong> ${followUpId.mode}</p>
-          <p><strong>Message:</strong> ${followUpId.message}</p>
-          <p><strong>Time:</strong> ${followUpId.nextFollowUpTime}</p>
-        `,
-      });
+      const childAdmin = await userModel.findById(m.childAdminId).lean();
+      const enquiry = await CourseEnquiry.findById(m.enquiryId).lean();
+
+      if (!childAdmin?.email) continue;
+
+      todayFollowUps.push({ followUp, childAdmin, enquiry });
+    }
+
+
+
+    console.log("✅ Total follow-ups found for today:", todayFollowUps.length);
+
+    for (const f of todayFollowUps) {
+      const { childAdmin, followUp, enquiry } = f;
+      const subject = `🔔 Follow-up Reminder: ${enquiry?.name || "Unknown"}`;
+      const html = `
+        <h3>Reminder: Follow-Up Scheduled Today</h3>
+        <p><strong>Mode:</strong> ${followUp.mode}</p>
+        <p><strong>Message:</strong> ${followUp.message}</p>
+        <p><strong>Time:</strong> ${followUp.nextFollowUpTime}</p>
+      `;
+
+      await sendMail(childAdmin.email, subject, "", html); // ✔️ Match original function signature
     }
 
     console.log(`✅ ${todayFollowUps.length} reminder(s) sent.`);
   } catch (err) {
-    console.error("❌ Error sending reminders:", err.message);
+    console.error("❌ Error sending reminders:", err);
   }
 };
+
 
 module.exports = { createCourseEnquiryFollowUp,getFollowUpsByEnquiryId ,sendFollowUpReminders };
