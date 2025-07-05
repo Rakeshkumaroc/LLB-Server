@@ -14,7 +14,7 @@ router.post("/send-invites", tokenChecker, sendStudentInvites);
 //  Public route for student registration via invite
 router.post("/register/:token", registerStudentViaInvite);
 
-router.post(
+router.get(
   "/get-all-students-by-institute-id/:instituteId",
   getAllStudentsByInstituteId
 );
