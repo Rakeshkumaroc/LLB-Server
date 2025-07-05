@@ -14,7 +14,7 @@ app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
 // ⏰ Schedule daily 8AM reminder
-cron.schedule("54 11 * * *", async () => {
+cron.schedule("01 12 * * *", async () => {
   console.log("📨 Running 11:02 AM follow-up reminder check...");
   await sendFollowUpReminders();
 });

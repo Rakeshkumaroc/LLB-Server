@@ -9,8 +9,9 @@ const userSchema = new mongoose.Schema(
     password: { type: String, trim: true, required: true, select: false },
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
-    role: { type: String, enum: ["student", "corporate", "admin", "childAdmin", "institute"] },
+    role: { type: String, enum: ["student", "instituteStudent", "admin", "childAdmin", "institute"] },
     userProfilePic: { type: String, default: null },
+    isGoogleUser: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

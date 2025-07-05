@@ -9,6 +9,7 @@ const {
   getSingleDealById,
   getDealsForUser,
   getSingleDealForUser,
+  getCoursesWithDealsForInstitute
 } = require("../controllers/raisedDealController");
 
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
@@ -47,6 +48,13 @@ router.get(
   tokenChecker,
   allowRoles(adminRoles),
   getAllDeals
+);
+
+
+router.get(
+  "/get-courses-with-deals-for-institute",
+  tokenChecker,
+  getCoursesWithDealsForInstitute
 );
 
 // Get single raised deal (admin)

@@ -4,6 +4,7 @@ const DealMapping = require("../models/raisedDealMapping");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const userModel = require("../models/userModel");
+const courseModel = require("../models/courseModel");
 
 // ✅ Admin: Create Deal
 const createRaisedDeal = async (req, res, next) => {
@@ -212,6 +213,40 @@ const getSingleDealById = async (req, res, next) => {
   }
 };
 
+
+
+const getCoursesWithDealsForInstitute = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return next(new ApiError("Unauthorized", 401));
+    }
+
+    // 🔹 Get all deal mappings for this institute user
+    const mappings = await RaisedDealMapping.find({
+      userId,
+      isDeleted: false,
+    }).select("courseId");
+
+    const courseIds = mappings.map((m) => m.courseId);
+
+    // 🔹 Get unique courses
+    const uniqueCourseIds = [...new Set(courseIds.map(id => id.toString()))];
+
+    const courses = await courseModel.find({
+      _id: { $in: uniqueCourseIds },
+      isDeleted: false,
+    });
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Courses with raised deals", courses));
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRaisedDeal,
   updateRaisedDeal,
@@ -220,4 +255,5 @@ module.exports = {
   getSingleDealById,
   getDealsForUser,
   getSingleDealForUser,
+  getCoursesWithDealsForInstitute
 };

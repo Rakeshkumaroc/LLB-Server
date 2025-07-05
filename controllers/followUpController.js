@@ -116,21 +116,55 @@ const sendFollowUpReminders = async () => {
       todayFollowUps.push({ followUp, childAdmin, enquiry });
     }
 
-
-
     console.log("✅ Total follow-ups found for today:", todayFollowUps.length);
 
     for (const f of todayFollowUps) {
       const { childAdmin, followUp, enquiry } = f;
-      const subject = `🔔 Follow-up Reminder: ${enquiry?.name || "Unknown"}`;
+
+      const subject = `🔔 Follow-up Reminder: ${enquiry.name || "Unknown"} (${enquiry.phone || "No Phone"})`;
+
       const html = `
-        <h3>Reminder: Follow-Up Scheduled Today</h3>
-        <p><strong>Mode:</strong> ${followUp.mode}</p>
-        <p><strong>Message:</strong> ${followUp.message}</p>
-        <p><strong>Time:</strong> ${followUp.nextFollowUpTime}</p>
+        <div style="font-family: 'Segoe UI', sans-serif; border: 1px solid #ccc; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto;">
+          <h2 style="color: #2c3e50;">📋 Your Follow-Up List for Today</h2>
+          <p>Hello <strong>${childAdmin.userName || "Team"}</strong>,</p>
+          <p>This is a reminder to follow up with the following enquiry today:</p>
+
+          <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">👤 Name:</td>
+              <td style="padding: 8px;">${enquiry.name || "N/A"}</td>
+            </tr>
+            <tr style="background-color: #f9f9f9;">
+              <td style="padding: 8px; font-weight: bold;">📧 Email:</td>
+              <td style="padding: 8px;">${enquiry.email || "N/A"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">📞 Phone:</td>
+              <td style="padding: 8px;">${enquiry.phone || "N/A"}</td>
+            </tr>
+            <tr style="background-color: #f9f9f9;">
+              <td style="padding: 8px; font-weight: bold;">📌 Mode:</td>
+              <td style="padding: 8px;">${followUp.mode || "N/A"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">🗓️ Time:</td>
+              <td style="padding: 8px;">${followUp.nextFollowUpTime || "N/A"}</td>
+            </tr>
+            <tr style="background-color: #f9f9f9;">
+              <td style="padding: 8px; font-weight: bold;">📝 Message:</td>
+              <td style="padding: 8px;">${followUp.message || "N/A"}</td>
+            </tr>
+          </table>
+
+          <p style="margin-top: 20px; color: #555;">Please make sure to connect with this user as per the scheduled time.</p>
+
+          <hr style="margin: 30px 0;" />
+
+          <p style="font-size: 13px; color: gray;">This is an automated reminder from the Law Learning Bench System.</p>
+        </div>
       `;
 
-      await sendMail(childAdmin.email, subject, "", html); // ✔️ Match original function signature
+      await sendMail(childAdmin.email, subject, "", html);
     }
 
     console.log(`✅ ${todayFollowUps.length} reminder(s) sent.`);
@@ -138,6 +172,7 @@ const sendFollowUpReminders = async () => {
     console.error("❌ Error sending reminders:", err);
   }
 };
+
 
 
 module.exports = { createCourseEnquiryFollowUp,getFollowUpsByEnquiryId ,sendFollowUpReminders };

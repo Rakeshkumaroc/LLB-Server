@@ -377,4 +377,123 @@ const getSingleUserById = async (req, res, next) => {
   }
 };
 
-module.exports = { signUp, login, addChildAdmin ,getAllInstitutes ,getAllStudent ,updateUser ,deleteUser,getSingleUserById ,getAllChildAdmin};
+// 🔹 Forgot Password Controller
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    // 🔍 Validate input
+    if (!email) {
+      return next(new ApiError("Email is required", 400));
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return next(new ApiError("Invalid email format", 400));
+    }
+
+    const user = await userModel.findOne({ email, isDeleted: false });
+
+    if (!user) {
+      return next(new ApiError("No user found with this email", 404));
+    }
+
+    if (user.isGoogleUser) {
+      return res.status(400).json(
+        new ApiResponse(
+          400,
+          "This account is registered with Google login. You cannot reset password."
+        )
+      );
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        userName: user.userName,
+        email: user.email,
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "5m" }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+
+    const textContent = `Hi ${user.userName},\nReset your password here: ${resetLink}`;
+    const htmlContent = `
+      <div style="font-family:sans-serif; max-width:600px; margin:auto;">
+        <h2>Reset your password</h2>
+        <p>Hello ${user.userName},</p>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetLink}" style="display:inline-block; padding:10px 20px; background:#007BFF; color:white; border-radius:5px;">Reset Password</a>
+        <p>If you didn’t request this, you can ignore this email.</p>
+      </div>
+    `;
+
+    await sendMail(user.email, "Reset your password", textContent, htmlContent);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Reset link sent to your registered email"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// 🔹 Reset Password Controller
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return next(new ApiError("Password is required", 400));
+    }
+
+    if (password.length < 6) {
+      return next(new ApiError("Password must be at least 6 characters", 400));
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    } catch (err) {
+      return next(new ApiError("Invalid or expired reset token", 400));
+    }
+
+    const user = await userModel.findOne({ _id: decoded.id, isDeleted: false });
+
+    if (!user) {
+      return next(new ApiError("User not found", 404));
+    }
+
+    if (user.isGoogleUser) {
+      return res.status(400).json(
+        new ApiResponse(
+          400,
+          "This account is registered with Google login. You cannot reset password."
+        )
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      Number(process.env.SALT_ROUNDS || 10)
+    );
+
+    await userModel.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Password reset successful"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+module.exports = { signUp, login, addChildAdmin ,getAllInstitutes ,getAllStudent ,updateUser ,deleteUser,getSingleUserById ,getAllChildAdmin ,forgotPassword,
+  resetPassword};

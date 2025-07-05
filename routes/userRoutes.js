@@ -8,7 +8,9 @@ const {
   updateUser,
   deleteUser,
   getSingleUserById,
-  getAllChildAdmin
+  getAllChildAdmin,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/userController");
 const { tokenChecker, allowRoles } = require("../middleware/authChecker");
 const router = express.Router();
@@ -48,5 +50,9 @@ router.put("/update-user/:id", tokenChecker, updateUser);
 
 router.delete("/delete-user/:id", tokenChecker, deleteUser);
 router.get("/get-single-user-by-id/:id", tokenChecker, getSingleUserById);
+
+router.post("/forgot-password", forgotPassword);
+
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

@@ -14,6 +14,7 @@ const  genEnquireRoutes = require("./routes/genEnquireRoutes");
 const  courseEnquireRoutes = require("./routes/courseEnquiryRoutes");
 const  enquireAssignRoutes = require("./routes/enquiryAssignRoutes");
 const  followUpRoutes = require("./routes/followUpRoutes");
+const  studentInviteRoutes = require("./routes/studentInviteRoutes");
 const cookieParser = require("cookie-parser");
 
 // 1️ Connect to MongoDB
@@ -46,6 +47,7 @@ app.use("/api/v1/gen-enquiry", genEnquireRoutes);
 app.use("/api/v1/course-enquiry", courseEnquireRoutes);
 app.use("/api/v1/enquire-assign", enquireAssignRoutes);
 app.use("/api/v1/follow-up", followUpRoutes);
+app.use("/api/v1/student-invite", studentInviteRoutes);
 //  Test Route
 app.get("/api/test", (req, res) => {
   res.status(200).json({ message: "OK" });
