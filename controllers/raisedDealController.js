@@ -228,7 +228,7 @@ const getCoursesWithDealsForInstitute = async (req, res, next) => {
     }
 
     // 🔹 Get all deal mappings for this institute user
-    const mappings = await RaisedDealMapping.find({
+    const mappings = await DealMapping.find({
       userId,
       isDeleted: false,
     }).select("courseId");
